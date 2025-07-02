@@ -18,21 +18,18 @@ public class OpenAIServiceImpl implements OpenAiService {
 
 
     @Override
-    public Flux<ChatResponse> processChatQueryWithStreamAndContext(String query, String level) {
+    public Flux<String> processChatQueryWithStreamAndContext(String query, String level) {
         if (query == null || query.isEmpty())
             throw new IllegalArgumentException("Query cannot be null or empty.");
 
-        ExpertiseLevel expertiseLevel;
-        switch (level.toLowerCase()) {
-            case "beginner":
-                expertiseLevel = ExpertiseLevel.BEGINNER;
-            case "intermediate":
-                expertiseLevel = ExpertiseLevel.INTERMEDIATE;
-            case "advanced":
-                expertiseLevel = ExpertiseLevel.ADVANCED;
-            default:
-                expertiseLevel = ExpertiseLevel.INTERMEDIATE;
-        }
+        ExpertiseLevel expertiseLevel = switch (level.toLowerCase()) {
+            case "beginner" -> ExpertiseLevel.BEGINNER;
+            case "intermediate" -> ExpertiseLevel.INTERMEDIATE;
+            case "advanced" -> ExpertiseLevel.ADVANCED;
+            default -> ExpertiseLevel.INTERMEDIATE;
+        };
+
+        System.out.println("Service expertiseLevel = " + expertiseLevel);
 
         SystemMessage systemMessage = SystemMessage.builder().text(systemInstructionTemplate(expertiseLevel)).build();
         UserMessage userMessage = UserMessage.builder().text(query).build();
@@ -47,7 +44,9 @@ public class OpenAIServiceImpl implements OpenAiService {
 
         try {
 //            return openAiChatModel.call(prompt).getResult().getOutput().getText();
-            return openAiChatModel.stream(prompt);
+            return openAiChatModel.stream(prompt)
+                    .flatMapIterable(ChatResponse::getResults)
+                    .mapNotNull(result -> result.getOutput().getText()); // or getText()
         } catch (RuntimeException e) {
             throw new RuntimeException("Error processing chat query:" + e.getMessage());
         }

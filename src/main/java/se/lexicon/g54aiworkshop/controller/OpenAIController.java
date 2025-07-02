@@ -20,13 +20,14 @@ public class OpenAIController {
     private final OpenAiService openAiService;
 
     @GetMapping
-    public Flux<ChatResponse> processSimpleChatQuery(
+    public Flux<String> processSimpleChatQuery(
             @NotNull(message = "Question cannot be null.")
             @NotBlank(message = "Question cannot be blank.")
             @Size(max = 500, message = "Question cannot exceed 500 characters")
             @RequestParam String question,
             @RequestParam(required = false, name = "expertiseLevel", defaultValue = "intermediate") String level
     ){
+        System.out.println("expertiseLevel = " + level);
        return openAiService.processChatQueryWithStreamAndContext(question, level);
     }
 
